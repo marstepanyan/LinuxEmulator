@@ -1,4 +1,4 @@
-from FileAndDirectory import Directory
+from FileAndDirectory import Directory, File
 import os
 import copy
 
@@ -10,18 +10,36 @@ class FileSystem:
         self.snapshots = []
 
     def pwd(self):
-        return self.current_directory
+        path_components = []
+        current_dir = self.current_directory
+
+        while current_dir != self.root:
+            path_components.insert(0, current_dir.get_name())
+            current_dir = current_dir.parent
+
+        path_components.insert(0, '/root')  # Add the root directory
+        return '/'.join(path_components)
 
     def cd(self, path):
-        if not path.startswith("/"):
+        if not path:
+            self.current_directory = self.root
+            return ''
+        elif path == '..':
+            if self.current_directory != self.root:
+                self.current_directory = self.current_directory.parent
+            return ''
+        elif path == '.':
+            return ''  # No change in the current directory
+
+        elif not path.startswith('/'):
             path = os.path.join(self.root.get_name(), path)
-        dirs = path.split("/")
-        current_dir = self.root
+        dirs = path.split('/')
+        current_dir = self.current_directory
         for directory in dirs:
             if directory:
                 current_dir = current_dir.get_subdirectory(directory)
                 if not current_dir:
-                    raise ValueError(f"Directory {directory} not found.")
+                    return f"Directory {directory} not found."
         self.current_directory = current_dir
         return ''
 
@@ -53,17 +71,29 @@ class FileSystem:
         parent_dir, name = os.path.split(path)
         parent = self._navigate_directory(parent_dir)
         if parent:
-            if isinstance(parent, Directory):
+            if parent in self.current_directory.get_subdirectories():
+                # if isinstance(parent, Directory):
                 parent.delete_subdirectory(name)
             else:
                 parent.delete_file(name)
         else:
-            raise ValueError(f"Path {path} not found.")
+            return f"Path {path} not found."
         return f"File {path} is removed."
 
     def cat(self, file_path):
         content = self._read_file(file_path)
         return content
+
+    def vim(self, file_name):
+        file = self.current_directory.get_file(file_name)
+        if isinstance(file, File):
+            print(f"Opening {file.get_name()} in vim. Editing mode activated...")
+            print(f"Old content:\n{file.get_content()}")
+            new_content = input("Enter your changes:\n")
+            file.update_content(new_content)
+            return f"{file.get_name()} saved."
+        else:
+            return f"File {file_name} not found."
 
     def cp(self, source_path, destination_path):
         content = self._read_file(source_path)
@@ -89,18 +119,22 @@ class FileSystem:
                 file = parent.get_file(file_name)
                 file.update_content(content)
             else:
-                raise ValueError(f"Path {path} is not a directory.")
+                return f"Path {path} is not a directory."
         else:
-            raise ValueError(f"Directory {parent_dir} not found.")
+            return f"Directory {parent_dir} not found."
 
     def _read_file(self, path):
         parent_dir, file_name = os.path.split(path)
-        parent = self._navigate_directory(parent_dir)
-        file = parent.get_file(file_name)
+        print(parent_dir, file_name)
+        if parent_dir:
+            parent = self._navigate_directory(parent_dir)
+            file = parent.get_file(file_name)
+        else:
+            file = self.current_directory.get_file(file_name)
         if file:
             return file.get_content()
         else:
-            return ""
+            return f"File {file_name} not found."
 
     def _navigate_directory(self, path):
         if not path.startswith("/"):
@@ -111,7 +145,7 @@ class FileSystem:
             if directory:
                 current_dir = current_dir.get_subdirectory(directory)
                 if not current_dir:
-                    raise ValueError(f"Directory {directory} not found.")
+                    return f"Directory {directory} not found."
         return current_dir
 
     def take_snapshot(self):
@@ -126,4 +160,4 @@ class FileSystem:
             self.root = copy.deepcopy(self.snapshots[index])
             self.current_directory = self.root
         else:
-            raise IndexError("Invalid snapshot index.")
+            return "Invalid snapshot index."

@@ -35,6 +35,10 @@ class LinuxEmulator:
             for arg in command.get_args():
                 return self.file_system.rm(arg)
 
+        elif command.get_name() == 'vim':
+            for arg in command.get_args():
+                return self.file_system.vim(arg)
+
         elif command.get_name() == 'cat':
             for arg in command.get_args():
                 return self.file_system.cat(arg)

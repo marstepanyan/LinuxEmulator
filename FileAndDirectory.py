@@ -18,6 +18,7 @@ class Directory:
         self.name = name
         self.subdirectories = []
         self.files = []
+        self.parent = None
 
     def get_name(self):
         return self.name
@@ -30,7 +31,7 @@ class Directory:
 
     def create_subdirectory(self, name):
         if self.get_subdirectory(name):
-            raise ValueError(f"Directory {name} already exists.")
+            return f"Directory {name} already exists."
         subdirectory = Directory(name)
         subdirectory.parent = self
         self.subdirectories.append(subdirectory)
@@ -40,7 +41,7 @@ class Directory:
         if subdirectory:
             self.subdirectories.remove(subdirectory)
         else:
-            raise ValueError(f"Directory {name} not found.")
+            return f"Directory {name} not found."
 
     def get_subdirectory(self, name):
         for subdirectory in self.subdirectories:
@@ -50,7 +51,7 @@ class Directory:
 
     def create_file(self, name):
         if self.get_file(name):
-            raise ValueError(f"File {name} already exists.")
+            return f"File {name} already exists."
         file = File(name)
         self.files.append(file)
 
@@ -59,7 +60,7 @@ class Directory:
         if file:
             self.files.remove(file)
         else:
-            raise ValueError(f"File {name} not found.")
+            return f"File {name} not found."
 
     def get_file(self, name):
         for file in self.files:
